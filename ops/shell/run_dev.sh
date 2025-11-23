@@ -31,4 +31,8 @@ npm run dev -- --host 0.0.0.0 --port "$FRONTEND_PORT" &
 FE_PID=$!
 
 trap 'log "Stopping services"; kill $API_PID $FE_PID 2>/dev/null' EXIT
+python - <<PY
+from ops.lan_info import format_access_urls
+print(format_access_urls(api_port=${API_PORT:-8000}, frontend_port=${FRONTEND_PORT:-3000}))
+PY
 wait

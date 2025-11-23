@@ -41,22 +41,30 @@ case "$OS_NAME" in
 
 log "Installing Python dependencies (if requirements.txt present)"
 if [ -f "$PROJECT_ROOT/requirements.txt" ]; then
-  python3 -m venv "$PROJECT_ROOT/.venv" 2>/dev/null || true
-  # shellcheck disable=SC1091
-  source "$PROJECT_ROOT/.venv/bin/activate"
-  pip install --upgrade pip
-  pip install -r "$PROJECT_ROOT/requirements.txt"
+  if command -v python3 >/dev/null 2>&1; then
+    python3 -m venv "$PROJECT_ROOT/.venv" 2>/dev/null || true
+    # shellcheck disable=SC1091
+    source "$PROJECT_ROOT/.venv/bin/activate"
+    pip install --upgrade pip
+    pip install -r "$PROJECT_ROOT/requirements.txt"
+  else
+    log "python3 not found on PATH; install python before continuing."
+  fi
 fi
 
 log "Installing frontend dependencies"
 if [ -d "$PROJECT_ROOT/frontend/prophet-labs-console" ]; then
   pushd "$PROJECT_ROOT/frontend/prophet-labs-console" >/dev/null
-  if [ -f package-lock.json ]; then
-    npm install
-  elif [ -f yarn.lock ]; then
-    yarn install
+  if command -v npm >/dev/null 2>&1; then
+    if [ -f package-lock.json ]; then
+      npm install
+    elif [ -f yarn.lock ] && command -v yarn >/dev/null 2>&1; then
+      yarn install
+    else
+      npm install
+    fi
   else
-    npm install
+    log "npm not available; skip frontend dependency install."
   fi
   popd >/dev/null
 fi

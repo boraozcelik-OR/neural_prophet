@@ -12,7 +12,7 @@ import platform
 import shutil
 import socket
 import subprocess
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -34,6 +34,9 @@ class EnvironmentReport:
     has_redis: bool
     recommended_api_workers: int
     recommended_worker_concurrency: int
+    python_version: str
+    node_version: Optional[str]
+    gpu_available: bool
     lan_ip: Optional[str] = None
 
     def to_json(self) -> str:
@@ -89,6 +92,37 @@ def _read_mem_total_gb() -> float:
                         kb_total = float(parts[1])
                         return kb_total / (1024 * 1024)
     return 0.0
+
+
+def _detect_python_version() -> str:
+    try:
+        return platform.python_version()
+    except Exception:
+        return "unknown"
+
+
+def _detect_node_version() -> Optional[str]:
+    node = shutil.which("node")
+    if not node:
+        return None
+    try:
+        result = subprocess.run([node, "--version"], check=False, capture_output=True, text=True)
+        version = result.stdout.strip() or result.stderr.strip()
+        return version.lstrip("v") or None
+    except Exception:
+        return None
+
+
+def _detect_gpu_available() -> bool:
+    """Lightweight GPU presence check via nvidia-smi when available."""
+    nvidia_smi = shutil.which("nvidia-smi")
+    if not nvidia_smi:
+        return False
+    try:
+        subprocess.run([nvidia_smi, "-L"], check=False, capture_output=True)
+        return True
+    except Exception:
+        return False
 
 
 def _disk_free_gb(path: Path) -> float:
@@ -155,6 +189,9 @@ def generate_report() -> EnvironmentReport:
     has_redis = detect_redis()
     api_workers, worker_concurrency = recommend_workers(cpu_count)
     lan_ip = detect_lan_ip()
+    python_version = _detect_python_version()
+    node_version = _detect_node_version()
+    gpu_available = _detect_gpu_available()
 
     return EnvironmentReport(
         os_name=os_name,
@@ -168,6 +205,9 @@ def generate_report() -> EnvironmentReport:
         has_redis=has_redis,
         recommended_api_workers=api_workers,
         recommended_worker_concurrency=worker_concurrency,
+        python_version=python_version,
+        node_version=node_version,
+        gpu_available=gpu_available,
         lan_ip=lan_ip,
     )
 

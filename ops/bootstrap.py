@@ -61,9 +61,9 @@ def _render_env(report: EnvironmentReport, args: argparse.Namespace) -> Dict[str
     merged["FRONTEND_PORT"] = str(args.frontend_port)
     merged.setdefault("API_HOST", "0.0.0.0")
     merged.setdefault("FRONTEND_HOST", "0.0.0.0")
-    merged.setdefault("DATABASE_URL", _detect_database(report))
-    merged.setdefault("REDIS_URL", _detect_redis(report))
-    merged.setdefault("ENABLE_CACHING", "true" if report.has_redis else "false")
+    merged.setdefault("DATABASE_URL", args.database_url or _detect_database(report))
+    merged.setdefault("REDIS_URL", args.redis_url or _detect_redis(report))
+    merged.setdefault("ENABLE_CACHING", "true" if (report.has_redis or args.redis_url) else "false")
     merged.setdefault("ENABLE_JOBS", "true")
     merged.setdefault("LOG_LEVEL", "INFO")
     merged["RECOMMENDED_API_WORKERS"] = str(report.recommended_api_workers)
@@ -79,8 +79,9 @@ def _write_env(env_path: Path, values: Dict[str, str]) -> None:
 def generate_env_file(env_path: Path, report: EnvironmentReport, args: argparse.Namespace) -> None:
     env_vars = _render_env(report, args)
     if env_path.exists() and not args.force:
-        print(f"[skip] {env_path} already exists. Use --force to overwrite.")
-        return
+        if not args.yes:
+            print(f"[skip] {env_path} already exists. Use --force or --yes to overwrite.")
+            return
     _write_env(env_path, env_vars)
     print(f"[ok] Wrote environment configuration to {env_path}")
 
@@ -91,6 +92,9 @@ def print_summary(report: EnvironmentReport, args: argparse.Namespace) -> None:
     print("\nSuggested runtime settings:")
     print(f"  API workers: {report.recommended_api_workers}")
     print(f"  Job concurrency: {report.recommended_worker_concurrency}")
+    print(f"  Python: {report.python_version}")
+    print(f"  Node.js: {report.node_version or 'not detected'}")
+    print(f"  GPU available: {'yes' if report.gpu_available else 'no'}")
     print("\nAccess URLs:")
     print(format_access_urls(api_port=args.api_port, frontend_port=args.frontend_port))
     if report.has_postgres:
@@ -109,7 +113,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--environment", default="dev", choices=["dev", "stage", "prod"], help="Environment label")
     parser.add_argument("--api-port", default=8000, type=int, help="Backend API port")
     parser.add_argument("--frontend-port", default=3000, type=int, help="Frontend port")
+    parser.add_argument("--database-url", default=None, help="Override database URL")
+    parser.add_argument("--redis-url", default=None, help="Override Redis URL")
     parser.add_argument("--force", action="store_true", help="Overwrite existing env file")
+    parser.add_argument("--yes", action="store_true", help="Proceed without interactive prompts")
     return parser.parse_args()
 
 

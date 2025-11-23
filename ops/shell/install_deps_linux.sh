@@ -6,10 +6,10 @@ log() { echo "[linux] $1"; }
 PKG_MANAGER=""
 if command -v apt-get >/dev/null 2>&1; then
   PKG_MANAGER="apt-get"
-elif command -v yum >/dev/null 2>&1; then
-  PKG_MANAGER="yum"
 elif command -v dnf >/dev/null 2>&1; then
   PKG_MANAGER="dnf"
+elif command -v yum >/dev/null 2>&1; then
+  PKG_MANAGER="yum"
 elif command -v pacman >/dev/null 2>&1; then
   PKG_MANAGER="pacman"
 fi
@@ -21,36 +21,46 @@ fi
 
 log "Using package manager: $PKG_MANAGER"
 
-install_pkg() {
-  pkg=$1
-  if command -v "$pkg" >/dev/null 2>&1; then
-    log "$pkg already installed"
-    return
+update_once() {
+  if [ "${UPDATED:-0}" -eq 0 ]; then
+    case "$PKG_MANAGER" in
+      apt-get) sudo apt-get update -y ;;
+      dnf) sudo dnf makecache -y ;;
+      yum) sudo yum makecache -y ;;
+      pacman) sudo pacman -Sy --noconfirm ;;
+    esac
+    UPDATED=1
   fi
+}
+
+install_pkg_list() {
+  update_once
   case "$PKG_MANAGER" in
     apt-get)
-      sudo apt-get update -y
-      sudo apt-get install -y "$pkg"
-      ;;
-    yum)
-      sudo yum install -y "$pkg"
+      sudo apt-get install -y "$@"
       ;;
     dnf)
-      sudo dnf install -y "$pkg"
+      sudo dnf install -y "$@"
+      ;;
+    yum)
+      sudo yum install -y "$@"
       ;;
     pacman)
-      sudo pacman -Sy --noconfirm "$pkg"
+      sudo pacman -S --noconfirm "$@"
       ;;
   esac
 }
 
-install_pkg python3
-install_pkg python3-venv || true
-install_pkg nodejs || true
-install_pkg npm || true
-install_pkg git || true
-install_pkg redis-server || install_pkg redis || true
-install_pkg postgresql || true
-install_pkg build-essential || install_pkg gcc || true
+case "$PKG_MANAGER" in
+  apt-get)
+    install_pkg_list python3 python3-venv python3-pip nodejs npm git redis-server postgresql build-essential curl
+    ;;
+  dnf|yum)
+    install_pkg_list python3 python3-virtualenv python3-pip nodejs npm git redis postgresql postgresql-server gcc make curl
+    ;;
+  pacman)
+    install_pkg_list python python-pip nodejs npm git redis postgresql base-devel curl
+    ;;
+esac
 
 log "Linux dependency installation complete"
