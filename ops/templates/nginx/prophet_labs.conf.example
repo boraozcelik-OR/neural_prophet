@@ -1,0 +1,20 @@
+# Example Nginx config for Prophet Labs
+upstream prophet_labs_api {
+    server 127.0.0.1:8000;
+}
+
+server {
+    listen 80;
+    server_name _;
+
+    location /api/ {
+        proxy_pass http://prophet_labs_api;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    location / {
+        root /path/to/prophet-labs/frontend/prophet-labs-console/dist;
+        try_files $uri /index.html;
+    }
+}
