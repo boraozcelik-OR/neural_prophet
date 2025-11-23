@@ -14,6 +14,8 @@ from typing import Any, Dict, List, Optional
 import yaml
 from pydantic import BaseSettings, Field, validator
 
+DEFAULT_CONFIG_DIR = Path("config")
+
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parent.parent
@@ -33,6 +35,23 @@ class ProphetLabsSettings(BaseSettings):
 
     environment: str = Field("development", description="Runtime environment name")
     log_level: str = Field("INFO", description="Root log level")
+    log_rotation_type: str = Field("size", description="Log rotation policy: size|time")
+    log_max_bytes: int = Field(10 * 1024 * 1024, description="Max bytes before rotating log files")
+    log_backup_count: int = Field(7, description="Number of rotated log files to keep")
+    log_rotation_when: str = Field("midnight", description="Timed rotation interval marker")
+    log_rotation_interval: int = Field(1, description="Timed rotation interval count")
+    log_to_console: bool = Field(False, description="Also emit logs to console when true")
+    log_levels: Dict[str, str] = Field(
+        default_factory=lambda: {
+            "prophet_labs.app": "INFO",
+            "prophet_labs.ingestion": "INFO",
+            "prophet_labs.forecast": "INFO",
+            "prophet_labs.accuracy": "INFO",
+            "prophet_labs.ui": "INFO",
+            "prophet_labs.audit": "INFO",
+        },
+        description="Per-logger override levels",
+    )
 
     database_url: str = Field(default_factory=_default_sqlite_url, description="SQLAlchemy database URL")
     redis_url: Optional[str] = Field(None, description="Redis URL for caching and background jobs")
@@ -57,6 +76,11 @@ class ProphetLabsSettings(BaseSettings):
     news_nlp_config: Path = Field(default=Path("prophet_labs/news_ingestion/nsi_config.yaml"), description="Path to NSI NLP config")
     news_retention_days: int = Field(90, description="Retention window for raw news articles")
     news_languages: List[str] = Field(default_factory=lambda: ["en"], description="Languages to keep during NSI processing")
+
+    accuracy_thresholds_path: Path = Field(
+        default=DEFAULT_CONFIG_DIR.joinpath("accuracy_thresholds.yaml"),
+        description="Path to per-metric accuracy tolerance configuration",
+    )
 
     class Config:
         env_prefix = "PROPHET_LABS_"
@@ -95,12 +119,13 @@ def get_settings() -> ProphetLabsSettings:
 
 
 def _load_yaml_config(name: str) -> Dict[str, Any]:
-    config_dir = _repo_root().joinpath("config")
-    path = config_dir.joinpath(name)
-    if not path.exists():
-        raise FileNotFoundError(f"Configuration file not found: {path}")
-    with path.open("r", encoding="utf-8") as handle:
-        return yaml.safe_load(handle) or {}
+    repo = _repo_root()
+    candidate_paths = [repo.joinpath("config", name), repo.joinpath("prophet_labs", "config", name)]
+    for path in candidate_paths:
+        if path.exists():
+            with path.open("r", encoding="utf-8") as handle:
+                return yaml.safe_load(handle) or {}
+    raise FileNotFoundError(f"Configuration file not found in {candidate_paths}")
 
 
 def load_categories() -> Dict[str, Any]:
@@ -115,10 +140,15 @@ def load_sources() -> Dict[str, Any]:
     return _load_yaml_config("sources.yaml")
 
 
+def load_accuracy_thresholds() -> Dict[str, Any]:
+    return _load_yaml_config("accuracy_thresholds.yaml")
+
+
 __all__ = [
     "ProphetLabsSettings",
     "get_settings",
     "load_categories",
     "load_thresholds",
     "load_sources",
+    "load_accuracy_thresholds",
 ]

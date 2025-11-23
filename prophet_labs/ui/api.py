@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import datetime as dt
+from pathlib import Path
 from typing import List, Optional
 
 from fastapi import Depends, FastAPI, HTTPException, Response, status
@@ -10,13 +11,28 @@ from pydantic import BaseModel
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, generate_latest
 
 from prophet_labs.config.settings import get_settings, load_categories
+from prophet_labs.forecast_history.metrics import compute_accuracy_summary
+from prophet_labs.forecast_history.repository import ForecastHistoryRepository
 from prophet_labs.storage.repository import Repository
-from prophet_labs.utils.logging import configure_logging, get_logger
+from prophet_labs.utils.logging_config import LoggingConfig, get_logger, init_logging
 
-LOGGER = get_logger(__name__)
+LOGGER = get_logger("prophet_labs.ui")
 settings = get_settings()
-configure_logging(settings.log_level)
+init_logging(
+    LoggingConfig(
+        logs_dir=Path("logs"),
+        rotation_type=settings.log_rotation_type,
+        max_bytes=settings.log_max_bytes,
+        backup_count=settings.log_backup_count,
+        rotation_when=settings.log_rotation_when,
+        rotation_interval=settings.log_rotation_interval,
+        log_to_console=settings.log_to_console,
+        default_level=settings.log_level,
+        levels=settings.log_levels,
+    )
+)
 repo = Repository(settings=settings)
+forecast_repo = ForecastHistoryRepository(repo)
 
 REQUEST_COUNTER = Counter("prophet_labs_requests_total", "API request count", ["endpoint"])
 LATEST_FORECAST_GAUGE = Gauge("prophet_labs_forecast_points", "Latest forecast points cached", ["metric_id"])
@@ -64,6 +80,34 @@ class ReportOut(BaseModel):
         orm_mode = True
 
 
+class ForecastEvaluationOut(BaseModel):
+    actual_value: float
+    error: float
+    relative_error: float
+    within_tolerance: bool
+    happened: bool
+    tolerance_used: Optional[float]
+    evaluated_at: dt.datetime
+
+    class Config:
+        orm_mode = True
+
+
+class ForecastIssuedOut(BaseModel):
+    issued_at: dt.datetime
+    target_time: dt.datetime
+    horizon_steps: int
+    yhat: float
+    yhat_lower: Optional[float]
+    yhat_upper: Optional[float]
+    status: str
+    model_version: Optional[str]
+    evaluation: Optional[ForecastEvaluationOut]
+
+    class Config:
+        orm_mode = True
+
+
 app = FastAPI(title="Prophet Labs API", version="0.2.0")
 app.add_middleware(
     CORSMiddleware,
@@ -76,6 +120,10 @@ app.add_middleware(
 
 def get_repository() -> Repository:
     return repo
+
+
+def get_forecast_repository() -> ForecastHistoryRepository:
+    return forecast_repo
 
 
 @app.get("/health")
@@ -118,6 +166,35 @@ def get_observations(
     if not metric:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Metric not found")
     return repository.get_observations(metric_id, start=start, end=end, limit=limit)
+
+
+@app.get(f"{settings.api_base_path}/metrics/{{metric_id}}/forecast_history")
+def get_forecast_history(
+    metric_id: str,
+    start: Optional[dt.datetime] = None,
+    end: Optional[dt.datetime] = None,
+    horizon_min: Optional[int] = None,
+    horizon_max: Optional[int] = None,
+    limit: int = 500,
+    repository: ForecastHistoryRepository = Depends(get_forecast_repository),
+):
+    REQUEST_COUNTER.labels(endpoint="forecast_history").inc()
+    records = repository.history(
+        metric_id=metric_id,
+        start=start,
+        end=end,
+        horizon_min=horizon_min,
+        horizon_max=horizon_max,
+        limit=limit,
+    )
+    return {"metric_id": metric_id, "forecasts": [ForecastIssuedOut.from_orm(rec) for rec in records]}
+
+
+@app.get(f"{settings.api_base_path}/metrics/{{metric_id}}/accuracy")
+def get_metric_accuracy(metric_id: str, window_days: int = 90, repository: ForecastHistoryRepository = Depends(get_forecast_repository)):
+    REQUEST_COUNTER.labels(endpoint="accuracy").inc()
+    summary = compute_accuracy_summary(metric_id, window_days=window_days, repo=repository)
+    return summary
 
 
 @app.get(f"{settings.api_base_path}/metrics/{{metric_id}}/forecast", response_model=List[ForecastOut])

@@ -20,7 +20,8 @@ from prophet_labs.storage.models import (
     NewsArticle,
     Report,
 )
-from prophet_labs.utils.logging import get_logger
+from prophet_labs.forecast_history.models import ForecastEvaluation, ForecastIssued
+from prophet_labs.utils.logging_config import get_logger
 
 LOGGER = get_logger(__name__)
 
@@ -193,6 +194,81 @@ class Repository:
         with self.session() as session:
             result = session.execute(stmt)
             return result.rowcount or 0
+
+    # Forecast history
+    def record_forecasts(self, forecasts: Sequence[ForecastIssued]) -> int:
+        if not forecasts:
+            return 0
+        with self.session() as session:
+            for forecast in forecasts:
+                session.add(forecast)
+            return len(forecasts)
+
+    def pending_forecasts(self, metric_id: Optional[str] = None, upto: Optional[dt.datetime] = None) -> List[ForecastIssued]:
+        stmt = select(ForecastIssued).where(ForecastIssued.status == "PENDING")
+        if metric_id:
+            stmt = stmt.where(ForecastIssued.metric_id == metric_id)
+        if upto:
+            stmt = stmt.where(ForecastIssued.target_time <= upto)
+        with self.session() as session:
+            return session.execute(stmt).scalars().all()
+
+    def set_evaluation(self, forecast_id: int, evaluation: ForecastEvaluation) -> ForecastEvaluation:
+        with self.session() as session:
+            forecast = session.get(ForecastIssued, forecast_id)
+            if forecast is None:
+                raise ValueError(f"Forecast {forecast_id} not found")
+            session.add(evaluation)
+            session.flush()
+            forecast.status = "EVALUATED"
+            forecast.evaluation_id = evaluation.id
+            forecast.evaluation = evaluation
+            session.add(forecast)
+            return evaluation
+
+    def forecast_history(
+        self,
+        metric_id: str,
+        start: Optional[dt.datetime] = None,
+        end: Optional[dt.datetime] = None,
+        horizon_min: Optional[int] = None,
+        horizon_max: Optional[int] = None,
+        limit: int = 500,
+    ) -> List[ForecastIssued]:
+        stmt = select(ForecastIssued).where(ForecastIssued.metric_id == metric_id)
+        if start:
+            stmt = stmt.where(ForecastIssued.issued_at >= start)
+        if end:
+            stmt = stmt.where(ForecastIssued.issued_at <= end)
+        if horizon_min:
+            stmt = stmt.where(ForecastIssued.horizon_steps >= horizon_min)
+        if horizon_max:
+            stmt = stmt.where(ForecastIssued.horizon_steps <= horizon_max)
+        stmt = stmt.order_by(ForecastIssued.issued_at.desc()).limit(limit)
+        with self.session() as session:
+            return session.execute(stmt).scalars().all()
+
+    def observation_value_at(self, metric_id: str, target_time: dt.datetime) -> Optional[float]:
+        target_date = target_time.date()
+        stmt = (
+            select(MetricObservation.value)
+            .where(MetricObservation.metric_id == metric_id)
+            .where(MetricObservation.ds == target_date)
+            .limit(1)
+        )
+        with self.session() as session:
+            return session.execute(stmt).scalar_one_or_none()
+
+    def latest_observation_timestamp(self, metric_id: str) -> Optional[dt.datetime]:
+        stmt = (
+            select(MetricObservation.ds)
+            .where(MetricObservation.metric_id == metric_id)
+            .order_by(MetricObservation.ds.desc())
+            .limit(1)
+        )
+        with self.session() as session:
+            latest = session.execute(stmt).scalar_one_or_none()
+            return dt.datetime.combine(latest, dt.time.min) if latest else None
 
 
 DataRepository = Repository

@@ -1,0 +1,11 @@
+default:
+  tolerance_rel: 0.05
+
+economy_unemployment_rate:
+  tolerance_abs: 0.3
+
+health_icu_capacity:
+  tolerance_abs: 5.0
+
+news_domestic_policy_risk_all:
+  tolerance_abs: 0.1

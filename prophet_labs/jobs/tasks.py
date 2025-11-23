@@ -8,12 +8,13 @@ from prophet_labs.config.settings import ProphetLabsSettings, get_settings, load
 from prophet_labs.data_ingestion.pipeline import build_sources, run_sources
 from prophet_labs.data_ingestion.sources.example_abs_source import ExampleABSSource
 from prophet_labs.data_ingestion.sources.example_csv_source import ExampleCSVSource
+from prophet_labs.forecast_history.evaluator import evaluate_pending_forecasts
 from prophet_labs.news_aggregation.aggregation import NewsAggregator
 from prophet_labs.news_ingestion.fetcher import NewsFetcher
 from prophet_labs.modelling.training import train_metric_models
 from prophet_labs.reports.generator import generate_daily_report
 from prophet_labs.storage.repository import Repository
-from prophet_labs.utils.logging import get_logger
+from prophet_labs.utils.logging_config import get_logger
 
 LOGGER = get_logger(__name__)
 
@@ -27,7 +28,8 @@ def refresh_data(settings: Optional[ProphetLabsSettings] = None) -> int:
     }
     sources = build_sources(load_sources(), factory=factory)
     df = run_sources(sources, repository)
-    LOGGER.info("Scheduled ingest finished", extra={"records": len(df)})
+    LOGGER.info("Scheduled ingest finished", extra_fields={"records": len(df)})
+    evaluate_pending_forecasts(repo=None)
     return len(df)
 
 
@@ -42,7 +44,7 @@ def generate_daily_reports(settings: Optional[ProphetLabsSettings] = None) -> st
     settings = settings or get_settings()
     repository = Repository(settings=settings)
     report = generate_daily_report(repository=repository, settings=settings)
-    LOGGER.info("Generated daily report", extra={"report_path": getattr(report, "path", None)})
+    LOGGER.info("Generated daily report", extra_fields={"report_path": getattr(report, "path", None)})
     return getattr(report, "path", "")
 
 
@@ -53,7 +55,7 @@ def ingest_news_once(settings: Optional[ProphetLabsSettings] = None) -> int:
     repository = Repository(settings=settings)
     fetcher = NewsFetcher(settings=settings, repository=repository)
     saved = fetcher.ingest_once()
-    LOGGER.info("NSI ingestion complete", extra={"saved": saved})
+    LOGGER.info("NSI ingestion complete", extra_fields={"saved": saved})
     return saved
 
 
@@ -65,7 +67,7 @@ def aggregate_news_for_date(target_date: Optional[str] = None, settings: Optiona
     aggregator = NewsAggregator(repository)
     date_value = dt.date.fromisoformat(target_date) if target_date else dt.date.today()
     points = aggregator.aggregate_daily(date_value)
-    LOGGER.info("NSI aggregation complete", extra={"date": str(date_value), "points": points})
+    LOGGER.info("NSI aggregation complete", extra_fields={"date": str(date_value), "points": points})
     return points
 
 
@@ -75,4 +77,5 @@ __all__ = [
     "generate_daily_reports",
     "ingest_news_once",
     "aggregate_news_for_date",
+    "evaluate_pending_forecasts",
 ]
