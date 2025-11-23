@@ -106,4 +106,28 @@ __all__ = [
     "MetricForecast",
     "ModelRun",
     "Report",
+    "NewsArticle",
 ]
+
+
+class NewsArticle(Base):
+    __tablename__ = "news_articles"
+    __table_args__ = (
+        Index("ix_news_articles_published", "published_at"),
+        Index("ix_news_articles_source", "source_id", "source_type"),
+    )
+
+    news_id = Column(String(128), primary_key=True)
+    source_id = Column(String(128), nullable=False)
+    source_type = Column(String(32), nullable=False)
+    feed_url = Column(String(512), nullable=False)
+    published_at = Column(DateTime, nullable=True)
+    ingested_at = Column(DateTime, default=dt.datetime.utcnow, nullable=False)
+    title = Column(String(512), nullable=True)
+    summary = Column(Text, nullable=True)
+    content = Column(Text, nullable=True)
+    language = Column(String(16), nullable=True)
+    link = Column(String(512), nullable=True)
+    tags_raw = Column(JSON, nullable=True)
+    metadata_json = Column("metadata", JSON, nullable=True)
+    nsi = Column(JSON, nullable=True)

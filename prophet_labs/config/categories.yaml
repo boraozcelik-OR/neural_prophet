@@ -47,3 +47,9 @@ Budget & Finance:
     - budget_balance
     - budget_revenue
     - budget_expenditure
+
+News & Signals:
+  description: "Narrative risk indexes derived from news and vetted OSINT feeds"
+  metrics:
+    - news_domestic_policy_risk_surface
+    - news_foreign_policy_risk_darkweb

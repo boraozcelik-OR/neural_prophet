@@ -5,7 +5,7 @@ import contextlib
 import datetime as dt
 from typing import Iterable, List, Optional, Sequence
 
-from sqlalchemy import create_engine, func, select
+from sqlalchemy import create_engine, delete, func, select
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
@@ -17,6 +17,7 @@ from prophet_labs.storage.models import (
     MetricForecast,
     MetricObservation,
     ModelRun,
+    NewsArticle,
     Report,
 )
 from prophet_labs.utils.logging import get_logger
@@ -162,6 +163,36 @@ class Repository:
             return [
                 {"category": row[0], "observation_count": row[1]} for row in rows
             ]
+
+    # News articles
+    def add_news_articles(self, articles: Sequence[NewsArticle]) -> int:
+        if not articles:
+            return 0
+        with self.session() as session:
+            for article in articles:
+                existing = session.get(NewsArticle, article.news_id)
+                if existing:
+                    continue
+                session.add(article)
+            return len(articles)
+
+    def get_news_articles_by_date(self, date_value: dt.date) -> List[NewsArticle]:
+        start_dt = dt.datetime.combine(date_value, dt.time.min)
+        end_dt = dt.datetime.combine(date_value, dt.time.max)
+        stmt = (
+            select(NewsArticle)
+            .where(NewsArticle.published_at >= start_dt)
+            .where(NewsArticle.published_at <= end_dt)
+            .order_by(NewsArticle.published_at.asc())
+        )
+        with self.session() as session:
+            return session.execute(stmt).scalars().all()
+
+    def purge_old_news(self, cutoff: dt.datetime) -> int:
+        stmt = delete(NewsArticle).where(NewsArticle.ingested_at < cutoff)
+        with self.session() as session:
+            result = session.execute(stmt)
+            return result.rowcount or 0
 
 
 DataRepository = Repository

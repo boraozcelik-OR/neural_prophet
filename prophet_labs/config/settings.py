@@ -52,6 +52,12 @@ class ProphetLabsSettings(BaseSettings):
     allowed_origins: List[str] = Field(default_factory=lambda: ["*"], description="CORS allowed origins")
     sentry_dsn: Optional[str] = Field(None, description="Optional Sentry DSN for error reporting")
 
+    # News & Signals Intelligence
+    news_feeds_path: Path = Field(default=Path("prophet_labs/news_ingestion/sources.yaml"), description="Path to NSI feed config")
+    news_nlp_config: Path = Field(default=Path("prophet_labs/news_ingestion/nsi_config.yaml"), description="Path to NSI NLP config")
+    news_retention_days: int = Field(90, description="Retention window for raw news articles")
+    news_languages: List[str] = Field(default_factory=lambda: ["en"], description="Languages to keep during NSI processing")
+
     class Config:
         env_prefix = "PROPHET_LABS_"
         env_file = ".env"

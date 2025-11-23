@@ -5,6 +5,8 @@ __all__ = [
     "data_ingestion",
     "storage",
     "modelling",
+    "news_ingestion",
+    "news_aggregation",
     "tagging",
     "reports",
     "ui",

@@ -1,0 +1,19 @@
+feeds:
+  - id: "abc_politics"
+    type: "surface_web"
+    url: "https://www.abc.net.au/news/feed/2942460/rss.xml"
+    category: "politics"
+    jurisdiction: "AU"
+    enabled: true
+  - id: "smh_politics"
+    type: "surface_web"
+    url: "https://www.smh.com.au/rss/politics/federal.xml"
+    category: "politics"
+    jurisdiction: "AU"
+    enabled: true
+  - id: "osint_darkweb_politics"
+    type: "darkweb_osint"
+    url: "https://osint-gateway.internal/api/v1/feeds/darkweb_politics_rss"
+    category: "politics"
+    jurisdiction: "GLOBAL"
+    enabled: false

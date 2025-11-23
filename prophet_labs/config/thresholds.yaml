@@ -36,3 +36,16 @@ budget_balance:
   warning_below: -20
   danger_below: -40
   notes: "Large deficits flagged"
+
+# News & Signals Intelligence metrics
+news_domestic_policy_risk_surface:
+  red: "value > 0.8"
+  green: "value < 0.4"
+  white: "missing_data == true"
+  black: "value > 0.95"
+
+news_foreign_policy_risk_darkweb:
+  red: "value > 0.8"
+  green: "value < 0.4"
+  white: "missing_data == true"
+  black: "value > 0.95"
