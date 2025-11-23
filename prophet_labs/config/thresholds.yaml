@@ -1,0 +1,51 @@
+# Thresholds for tagging forecasts and observations.
+# Values: upper/lower thresholds for GREEN vs RED status.
+# BLACK is reserved for missing/invalid data and WHITE is neutral.
+economy_gdp_growth:
+  unit: "%"
+  warning_below: 1.5
+  danger_below: 0.0
+  notes: "GDP growth below 1.5% flags slowing economy"
+economy_unemployment_rate:
+  unit: "%"
+  warning_above: 6.5
+  danger_above: 8.5
+  notes: "Elevated unemployment signalled by higher rates"
+health_icu_occupancy:
+  unit: "%"
+  warning_above: 80
+  danger_above: 90
+  notes: "Occupancy beyond 90% indicates stress on ICU capacity"
+crime_total_rate:
+  unit: "per 100k"
+  warning_above: 750
+  danger_above: 900
+  notes: "Higher total crime per capita triggers alerts"
+defence_budget:
+  unit: "Billion AUD"
+  warning_below: 40
+  danger_below: 30
+  notes: "Budget falling below planned levels triggers risk"
+energy_emissions_co2e:
+  unit: "MtCO2e"
+  warning_above: 500
+  danger_above: 550
+  notes: "Rising emissions should be highlighted"
+budget_balance:
+  unit: "Billion AUD"
+  warning_below: -20
+  danger_below: -40
+  notes: "Large deficits flagged"
+
+# News & Signals Intelligence metrics
+news_domestic_policy_risk_surface:
+  red: "value > 0.8"
+  green: "value < 0.4"
+  white: "missing_data == true"
+  black: "value > 0.95"
+
+news_foreign_policy_risk_darkweb:
+  red: "value > 0.8"
+  green: "value < 0.4"
+  white: "missing_data == true"
+  black: "value > 0.95"

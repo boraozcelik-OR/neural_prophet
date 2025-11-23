@@ -1,0 +1,21 @@
+abs_economy:
+  type: abs_mock
+  description: "Australian Bureau of Statistics mock GDP and labour feed"
+  metrics:
+    - economy_gdp_real
+    - economy_gdp_growth
+    - economy_unemployment_rate
+  options:
+    frequency: quarterly
+    jurisdiction: AU
+
+health_capacity_csv:
+  type: csv_mock
+  description: "Hospital capacity sample feed"
+  metrics:
+    - health_hospital_beds
+    - health_icu_capacity
+    - health_icu_occupancy
+  options:
+    file_path: data/mock_health_capacity.csv
+    jurisdiction: AU

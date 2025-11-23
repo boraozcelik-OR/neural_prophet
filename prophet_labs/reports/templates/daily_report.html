@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+  <section>
+    <h2>Metric Status</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Category</th>
+          <th>Value</th>
+          <th>Status</th>
+          <th>Rationale</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for metric in metrics %}
+        <tr>
+          <td>{{ metric.metric_name }}</td>
+          <td>{{ metric.category }}</td>
+          <td>{{ metric.value }} {{ metric.unit }}</td>
+          <td class="status-{{ metric.status }}">{{ metric.status }}</td>
+          <td>{{ metric.rationale }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  <section>
+    <h2>Forecast Preview</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Metric</th>
+          <th>Forecast</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in forecast %}
+        <tr>
+          <td>{{ row.ds }}</td>
+          <td>{{ row.metric_id }}</td>
+          <td>{{ row.yhat1 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

@@ -1,0 +1,56 @@
+languages:
+  - en
+max_content_chars: 8000
+sentiment:
+  neutral_window: 0.05
+  negative_keywords:
+    - crisis
+    - corruption
+    - protest
+    - attack
+    - cyber
+    - breach
+  positive_keywords:
+    - agreement
+    - ceasefire
+    - relief
+    - surplus
+    - cooperation
+  weight_negative: 1.1
+  weight_positive: 0.9
+risk:
+  base_weight: 0.6
+  topic_weight: 0.3
+  sentiment_weight: 0.4
+  count_weight: 0.2
+  domains:
+    domestic_policy:
+      keywords:
+        - parliament
+        - senate
+        - budget
+        - treasury
+    foreign_policy:
+      keywords:
+        - alliance
+        - diplomatic
+        - sanction
+        - treaty
+    economic_policy:
+      keywords:
+        - inflation
+        - unemployment
+        - gdp
+        - interest rate
+    security:
+      keywords:
+        - defence
+        - cybersecurity
+        - military
+        - intelligence
+    election:
+      keywords:
+        - election
+        - campaign
+        - vote
+        - ballot
