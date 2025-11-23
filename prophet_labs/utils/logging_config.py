@@ -24,6 +24,7 @@ _LOGGER_FILES: Dict[str, str] = {
     "prophet_labs.accuracy": "accuracy.log",
     "prophet_labs.ui": "ui.log",
     "prophet_labs.audit": "audit.log",
+    "prophet_labs.startup": "startup.log",
 }
 
 _STANDARD_ATTRS: set[str] = {
@@ -70,6 +71,7 @@ class LoggingConfig:
             "prophet_labs.accuracy": "INFO",
             "prophet_labs.ui": "INFO",
             "prophet_labs.audit": "INFO",
+            "prophet_labs.startup": "INFO",
         }
     )
 

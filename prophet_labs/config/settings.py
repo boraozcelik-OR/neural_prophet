@@ -49,6 +49,7 @@ class ProphetLabsSettings(BaseSettings):
             "prophet_labs.accuracy": "INFO",
             "prophet_labs.ui": "INFO",
             "prophet_labs.audit": "INFO",
+            "prophet_labs.startup": "INFO",
         },
         description="Per-logger override levels",
     )

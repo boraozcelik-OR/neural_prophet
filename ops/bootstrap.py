@@ -8,11 +8,13 @@ from __future__ import annotations
 
 import argparse
 import os
+from dataclasses import asdict
 from pathlib import Path
 from typing import Dict
 
 from ops.diagnostics import EnvironmentReport, generate_report
 from ops.lan_info import format_access_urls
+from prophet_labs.utils.logging_config import LoggingConfig, get_logger, init_logging
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_ENV_PATH = PROJECT_ROOT / ".env"
@@ -71,6 +73,23 @@ def _render_env(report: EnvironmentReport, args: argparse.Namespace) -> Dict[str
     return merged
 
 
+def _init_startup_logging() -> LoggingConfig:
+    """Initialise structured logging for bootstrap sequence."""
+
+    logs_dir = PROJECT_ROOT / "logs"
+    config = LoggingConfig(
+        logs_dir=logs_dir,
+        rotation_type=os.environ.get("LOG_ROTATION_TYPE", "size"),
+        max_bytes=int(os.environ.get("LOG_MAX_BYTES", 10 * 1024 * 1024)),
+        backup_count=int(os.environ.get("LOG_BACKUP_COUNT", 7)),
+        rotation_when=os.environ.get("LOG_ROTATION_WHEN", "midnight"),
+        rotation_interval=int(os.environ.get("LOG_ROTATION_INTERVAL", 1)),
+        log_to_console=os.environ.get("LOG_TO_CONSOLE", "false").lower() == "true",
+    )
+    init_logging(config)
+    return config
+
+
 def _write_env(env_path: Path, values: Dict[str, str]) -> None:
     lines = [f"{k}={v}" for k, v in values.items()]
     env_path.write_text("\n".join(lines) + "\n")
@@ -121,10 +140,24 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    _init_startup_logging()
+    logger = get_logger("prophet_labs.startup")
     args = parse_args()
     report = generate_report()
+    logger.info("bootstrap_diagnostics_complete", extra={"extra_fields": asdict(report)})
     generate_env_file(args.env_path, report, args)
+    logger.info(
+        "env_rendered",
+        extra={
+            "extra_fields": {
+                "env_path": str(args.env_path),
+                "api_port": args.api_port,
+                "frontend_port": args.frontend_port,
+            }
+        },
+    )
     print_summary(report, args)
+    logger.info("bootstrap_complete")
 
 
 if __name__ == "__main__":
