@@ -1,0 +1,55 @@
+Economy:
+  description: "Macroeconomic indicators including GDP, prices, and labour activity"
+  metrics:
+    - economy_gdp_real
+    - economy_gdp_growth
+    - economy_unemployment_rate
+    - economy_inflation_cpi
+    - economy_public_debt
+Health & Hospitals:
+  description: "Health system capacity and population health indicators"
+  metrics:
+    - health_hospital_beds
+    - health_icu_capacity
+    - health_icu_occupancy
+    - health_wait_times
+Crime & Justice:
+  description: "Crime rates, clearances, and incarceration"
+  metrics:
+    - crime_total_rate
+    - crime_clearance_rate
+    - crime_incarceration_rate
+Defence & Security:
+  description: "Defence spending and personnel readiness"
+  metrics:
+    - defence_budget
+    - defence_personnel_strength
+    - defence_capability_index
+Education:
+  description: "Schooling and tertiary participation"
+  metrics:
+    - education_school_enrolment
+    - education_tertiary_enrolment
+    - education_student_teacher_ratio
+Labour & Demographics:
+  description: "Population and labour force activity"
+  metrics:
+    - labour_population
+    - labour_participation_rate
+Energy & Environment:
+  description: "Energy production mix and emissions"
+  metrics:
+    - energy_generation_renewables_share
+    - energy_emissions_co2e
+Budget & Finance:
+  description: "Budgetary aggregates and fiscal position"
+  metrics:
+    - budget_balance
+    - budget_revenue
+    - budget_expenditure
+
+News & Signals:
+  description: "Narrative risk indexes derived from news and vetted OSINT feeds"
+  metrics:
+    - news_domestic_policy_risk_surface
+    - news_foreign_policy_risk_darkweb

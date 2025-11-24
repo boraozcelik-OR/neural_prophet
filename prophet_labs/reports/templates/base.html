@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Prophet Labs Report</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; background: #f7f9fb; }
+    header { border-bottom: 2px solid #0c3c60; padding-bottom: 12px; margin-bottom: 24px; }
+    h1 { color: #0c3c60; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    th, td { border: 1px solid #c5d1de; padding: 8px; text-align: left; }
+    th { background: #e4ecf4; }
+    .status-RED { color: #c0392b; font-weight: bold; }
+    .status-GREEN { color: #1e8449; font-weight: bold; }
+    .status-WHITE { color: #2c3e50; }
+    .status-BLACK { color: #000; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Prophet Labs — Daily Situation Report</h1>
+    <p>Government analytics console powered by NeuralProphet</p>
+  </header>
+  {% block content %}{% endblock %}
+</body>
+</html>

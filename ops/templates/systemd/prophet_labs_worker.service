@@ -1,0 +1,14 @@
+[Unit]
+Description=Prophet Labs worker service
+After=network.target redis.service
+
+[Service]
+EnvironmentFile=/path/to/prophet-labs/.env
+WorkingDirectory=/path/to/prophet-labs
+ExecStart=/path/to/prophet-labs/.venv/bin/python -m prophet_labs.jobs.tasks --concurrency ${RECOMMENDED_WORKER_CONCURRENCY:-4}
+Restart=on-failure
+User=www-data
+Group=www-data
+
+[Install]
+WantedBy=multi-user.target

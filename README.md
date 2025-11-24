@@ -1,141 +1,95 @@
-[![GitHub release (latest SemVer)](https://img.shields.io/github/v/release/ourownstory/neural_prophet?logo=github)](https://github.com/ourownstory/neural_prophet/releases)
-[![Pypi_Version](https://img.shields.io/pypi/v/neuralprophet.svg)](https://pypi.python.org/pypi/neuralprophet)
-[![Python Version](https://img.shields.io/badge/python-3.9+-blue?logo=python)](https://www.python.org/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![License](https://img.shields.io/badge/license-MIT-brightgreen)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/ourownstory/neural_prophet/actions/workflows/tests.yml/badge.svg)](https://github.com/ourownstory/neural_prophet/actions/workflows/tests.yml)
-[![codecov](https://codecov.io/gh/ourownstory/neural_prophet/branch/master/graph/badge.svg?token=U5KXCL55DW)](https://codecov.io/gh/ourownstory/neural_prophet)
-[![Slack](https://img.shields.io/badge/slack-@neuralprophet-CF0E5B.svg?logo=slack&logoColor=white&labelColor=3F0E40)](https://neuralprophet.slack.com/join/shared_invite/zt-sgme2rw3-3dCH3YJ_wgg01IXHoYaeCg#/shared-invite/email)
-[![Downloads](https://static.pepy.tech/personalized-badge/neuralprophet?period=total&units=international_system&left_color=black&right_color=blue&left_text=Downloads)](https://pepy.tech/project/neuralprophet)
+# Prophet Labs – Government-Grade Forecasting & Monitoring Platform
 
-![NP-logo-wide_cut](https://user-images.githubusercontent.com/21246060/111388960-6c367e80-866d-11eb-91c1-46f2c0d21879.PNG)
+Prophet Labs is a secure, LAN-first analytics stack built on top of the NeuralProphet time-series engine. It ingests Australian public datasets and vetted OSINT feeds, enriches them with news/signals intelligence, trains NeuralProphet models, tracks forecast accuracy over time, and serves dashboards and APIs for decision-makers inside sensitive government networks.
 
+## Key Capabilities
+- **Secure, offline-ready operations:** Runs entirely on hardened Linux hosts without cloud dependencies; supports air-gapped deployments with optional controlled gateways.
+- **Unified data ingestion:** Scheduled pipelines for Australian public data plus OSINT/news feeds, normalized into a common time-series schema with provenance metadata.
+- **News & Signals Intelligence (NSI):** RSS/JSON feed ingestion, NLP enrichment (topics/entities/sentiment/risk), and aggregation into forecastable news-intensity metrics.
+- **Forecast history & accuracy:** Every forecast is recorded, evaluated when actuals arrive, and labeled `happened=true/false` with tolerance rules; accuracy metrics are exposed via API/UI.
+- **Government-style UI:** React/TypeScript console with dashboards, metric drilldowns, news panels, and accuracy/forecast-history views.
+- **Structured logging & audit:** Per-domain rotating logs under `logs/` plus audit trails for administrative actions and startup events.
 
-Please note that the project is still in beta phase. Please report any issues you encounter or suggestions you have. We will do our best to address them quickly. Contributions are very welcome!
+## Repository Layout
+- `prophet_labs/` – Backend services (ingestion, modelling, tagging, reports, UI API, jobs) and NSI modules.
+- `frontend/prophet-labs-console/` – React + Vite console.
+- `ops/` – Diagnostics, LAN discovery, bootstrap helpers, shell runners, and deployment templates.
+- `config/` – Environment templates and accuracy thresholds.
+- `data/`, `models/`, `outputs/`, `logs/` – Default runtime storage locations (created as needed).
+- `tests/` – Upstream NeuralProphet tests (may require packaged installation to run).
 
-# NeuralProphet: human-centered forecasting
-NeuralProphet is an easy to learn framework for interpretable time series forecasting.
-NeuralProphet is built on PyTorch and combines Neural Networks and traditional time-series algorithms, inspired by [Facebook Prophet](https://github.com/facebook/prophet) and [AR-Net](https://github.com/ourownstory/AR-Net).
-- With a few lines of code, you can define, customize, visualize, and evaluate your own forecasting models.
-- It is designed for iterative human-in-the-loop model building. That means that you can build a first model quickly, interpret the results, improve, repeat. Due to the focus on interpretability and customization-ability, NeuralProphet may not be the most accurate model out-of-the-box; so, don't hesitate to adjust and iterate until you like your results.
-- NeuralProphet is best suited for time series data that is of higher-frequency (sub-daily) and longer duration (at least two full periods/years).
+## Prerequisites
+- Python 3.10+ with virtualenv support
+- Node.js 18+ and npm
+- SQLite (default) or PostgreSQL for production
+- Optional: Redis for caching/queues; GPU drivers if using accelerated training
 
+## Bootstrapping & Environment Setup
+1. **Install system deps (optional automation):**
+   ```bash
+   bash ops/shell/install_dependencies.sh
+   ```
+   The script checks OS family and installs Python/Node/DB/Redis if available.
 
-## Documentation
-The [documentation page](https://neuralprophet.com) may not be entirely up to date. Docstrings should be reliable, please refer to those when in doubt. We are working on an improved documentation. We appreciate any help to improve and update the docs.
+2. **Create/update environment file:**
+   ```bash
+   python -m ops.bootstrap --environment dev --yes
+   ```
+   Flags let you override ports, DB/Redis URLs, and force regeneration. The tool writes `.env` and prints recommended worker sizing.
 
-For a visual introduction to NeuralProphet, [view this presentation](notes/NeuralProphet_Introduction.pdf).
+3. **Diagnostics only (optional):**
+   ```bash
+   python -m ops.diagnostics
+   ```
+   Generates an environment report (CPU, RAM, disk, Redis/Postgres presence).
 
-## Contribute
-We compiled a [Contributing to NeuralProphet](CONTRIBUTING.md) page with practical instructions and further resources to help you become part of the family. 
+## Running the Platform
+- **Development (API + UI with hot reload):**
+  ```bash
+  bash ops/shell/run_dev.sh
+  ```
+  Starts FastAPI (Uvicorn) on `${API_PORT:-8000}` and Vite dev server on `${FRONTEND_PORT:-3000}`, printing both localhost and LAN URLs.
 
-## Community
-#### Discussion and Help
-If you have any questions or suggestion, you can participate in [our community right here on Github](https://github.com/ourownstory/neural_prophet/discussions)
+- **Production preview (build + serve):**
+  ```bash
+  bash ops/shell/run_prod.sh
+  ```
+  Builds the frontend, starts Uvicorn with configured workers, and serves the built UI via `npm run preview`. Systemd unit templates live in `ops/templates/systemd/` and an nginx reverse-proxy example in `ops/templates/nginx/`.
 
-#### Slack Chat
-We also have an active [Slack community](https://join.slack.com/t/neuralprophet/shared_invite/zt-sgme2rw3-3dCH3YJ_wgg01IXHoYaeCg). Come and join the conversation!
+- **Scheduled jobs:**
+  Background tasks (ingestion, training, news fetch, forecast evaluation, report generation) are defined in `prophet_labs/jobs/tasks.py` and can be wired to APScheduler/Celery depending on configuration.
 
-## Tutorials
-[![Open All Collab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ourownstory/neural_prophet)
+## Configuration
+- **App settings:** `prophet_labs/config/settings.py` (env-backed) governs DB/Redis URLs, API host/port, job backends, caching, and feature flags.
+- **Data sources:** `prophet_labs/config/sources.yaml` and `prophet_labs/news_ingestion/sources.yaml` enumerate structured and news/OSINT feeds.
+- **Tagging thresholds:** `prophet_labs/config/thresholds.yaml` for core metrics; `config/accuracy_thresholds.yaml` for forecast tolerances.
+- **News/NLP:** `prophet_labs/news_ingestion/nsi_config.yaml` controls language, topic/domain mappings, and NLP heuristics.
 
-There are several [example notebooks](docs/source/tutorials) to help you get started. 
+## Logging & Audit
+- Logs are written to `logs/` with per-domain files: `app.log`, `ingestion.log`, `forecast.log`, `accuracy.log`, `ui.log`, `audit.log`, and `startup.log` (rotation configurable via env).
+- Initialize logging once at process start via `prophet_labs.utils.logging_config.init_logging` if you launch custom entrypoints.
+- Audit-sensitive actions (config changes, manual retrains, evaluation triggers) should log to `audit.log` with user and correlation identifiers.
 
-You can find the datasets used in the tutorials, including data preprocessing examples, in our [neuralprophet-data repository](https://github.com/ourownstory/neuralprophet-data).
+## Forecast History & Accuracy
+- Forecast issuance/evaluation models and utilities live under `prophet_labs/forecast_history/`.
+- Every forecast is persisted with model version, horizon, bounds, and status. Pending forecasts are evaluated when actuals land using tolerances from `config/accuracy_thresholds.yaml`, marking `happened=true/false`.
+- Accuracy aggregations (overall and by horizon buckets) are exposed via the API and surfaced in the UI’s metric detail views.
 
-Please refer to our [documentation page](https://neuralprophet.com) for more resources.
+## News & Signals Intelligence (NSI)
+- RSS/Atom/JSON feeds are defined in `prophet_labs/news_ingestion/sources.yaml` and fetched by `fetcher.py` using `rss_client.py` with ETag/Last-Modified support and size limits.
+- NLP enrichment in `nsi_pipeline.py` performs language filtering, NER, topic/domain classification, sentiment, and risk scoring (offline/local models only).
+- Aggregated daily news-intensity metrics are built in `prophet_labs/news_aggregation/aggregation.py` and treated like regular metrics for forecasting and tagging.
 
-### Minimal example
-```python
-from neuralprophet import NeuralProphet
-```
-After importing the package, you can use NeuralProphet in your code:
-```python
-m = NeuralProphet()
-metrics = m.fit(df)
-forecast = m.predict(df)
-```
-You can visualize your results with the inbuilt plotting functions:
-```python
-fig_forecast = m.plot(forecast)
-fig_components = m.plot_components(forecast)
-fig_model = m.plot_parameters()
-```
-If you want to forecast into the unknown future, extend the dataframe before predicting:
-```python
-m = NeuralProphet().fit(df, freq="D")
-df_future = m.make_future_dataframe(df, periods=30)
-forecast = m.predict(df_future)
-fig_forecast = m.plot(forecast)
-```
-## Install
-You can now install neuralprophet directly with pip:
-```shell
-pip install neuralprophet
-```
+## Security Posture
+- LAN-only by default; no external SaaS dependencies.
+- Secrets and credentials are loaded from `.env` (or environment variables) and never hard-coded.
+- Ingestion/OSINT connectors are pull-only and can be sandboxed behind organization-controlled gateways; no direct dark web access is embedded.
+- Logs and audit trails provide provenance and traceability; enable SELinux/AppArmor and auditd on hosts per agency policy.
 
-### Install options
+## Troubleshooting
+- **Python imports for ops tools:** Run with `python -m ops.bootstrap` / `python -m ops.diagnostics` from the repo root so package imports resolve.
+- **Frontend build issues:** Ensure Node 18+; reinstall deps via `npm install` inside `frontend/prophet-labs-console/` if needed.
+- **Tests:** Upstream tests expect `neuralprophet` to be installed as a package; if running locally, install editable mode (`pip install -e .`) and ensure optional deps are present.
 
-If you plan to use the package in a Jupyter notebook, we recommended to install the 'live' version:
-```shell
-pip install neuralprophet[live]
-```
-This will allow you to enable `plot_live_loss` in the `fit` function to get a live plot of train (and validation) loss.
-
-If you would like the most up to date version, you can instead install directly from github:
-```shell
-git clone <copied link from github>
-cd neural_prophet
-pip install .
-```
-
-Note for Windows users: Please use WSL2.
-
-## Features
-### Model components
-* Autoregression: Autocorrelation modelling - linear or NN (AR-Net).
-* Trend: Piecewise linear trend with optional automatic changepoint detection.
-* Seasonality: Fourier terms at different periods such as yearly, daily, weekly, hourly.
-* Lagged regressors: Lagged observations (e.g temperature sensor) - linear or NN.
-* Future regressors: In advance known features (e.g. temperature forecast) - linear or NN.
-* Events: Country holidays & recurring custom events.
-* Global Modeling: Components can be local, global or 'glocal' (global + regularized local)
-
-
-### Framework features
-* Multiple time series: Fit a global/glocal model with (partially) shared model parameters.
-* Uncertainty: Estimate values of specific quantiles - Quantile Regression.
-* Regularize modelling components.
-* Plotting of forecast components, model coefficients and more.
-* Time series crossvalidation utility.
-* Model checkpointing and validation.
-
-
-### Coming soon<sup>:tm:</sup>
-
-* Cross-relation of lagged regressors.
-* Static metadata regression for multiple series
-* Logistic growth for trend component.
-
-For a list of past changes, please refer to the [releases page](https://github.com/ourownstory/neural_prophet/releases).
-
-## Cite
-Please cite [NeuralProphet](https://arxiv.org/abs/2111.15397) in your publications if it helps your research:
-```
-@misc{triebe2021neuralprophet,
-      title={NeuralProphet: Explainable Forecasting at Scale}, 
-      author={Oskar Triebe and Hansika Hewamalage and Polina Pilyugina and Nikolay Laptev and Christoph Bergmeir and Ram Rajagopal},
-      year={2021},
-      eprint={2111.15397},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
-}
-```
-### Many Thanks To Our Contributors:
-<a href="https://github.com/ourownstory/neural_prophet/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=ourownstory/neural_prophet" />
-</a>
-
-## About
-NeuralProphet is an open-source community project, supported by awesome people like you. 
-If you are interested in joining the project, please feel free to reach out to me (Oskar) - you can find my email on the [NeuralProphet Paper](https://arxiv.org/abs/2111.15397).
+## License
+This repository extends the NeuralProphet project (MIT License). See `LICENSE` for details.
