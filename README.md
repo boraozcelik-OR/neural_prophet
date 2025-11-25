@@ -56,6 +56,16 @@ Prophet Labs is a secure, LAN-first analytics stack built on top of the NeuralPr
   ```
   Builds the frontend, starts Uvicorn with configured workers, and serves the built UI via `npm run preview`. Systemd unit templates live in `ops/templates/systemd/` and an nginx reverse-proxy example in `ops/templates/nginx/`.
 
+- **Windows launcher (install/bootstrap/dev):**
+  ```bat
+  ops\shell\run_windows.bat --dev --api-port 8000 --frontend-port 3000
+  ```
+  Or use the Python launcher (buildable to `.exe` via PyInstaller):
+  ```bat
+  py -3 ops\windows_launcher.py --dev
+  ```
+  Both create `logs\` if missing, optionally run the PowerShell installer, render `.env`, and can start API/UI dev servers.
+
 - **Scheduled jobs:**
   Background tasks (ingestion, training, news fetch, forecast evaluation, report generation) are defined in `prophet_labs/jobs/tasks.py` and can be wired to APScheduler/Celery depending on configuration.
 
