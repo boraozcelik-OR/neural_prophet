@@ -10,10 +10,11 @@ Build as an .exe (optional) with:
 from __future__ import annotations
 
 import argparse
+import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 INSTALL_SCRIPT = PROJECT_ROOT / "ops" / "shell" / "install_deps_windows.ps1"
@@ -50,9 +51,17 @@ def start_api(api_port: int) -> subprocess.Popen:
     return subprocess.Popen([sys.executable, "-m", "uvicorn", "prophet_labs.ui.api:app", "--host", "0.0.0.0", "--port", str(api_port)])
 
 
-def start_frontend(frontend_port: int) -> subprocess.Popen:
-    print(f"[launcher] Starting frontend dev server on port {frontend_port} ...")
-    return subprocess.Popen(["npm", "run", "dev", "--", "--host", "--port", str(frontend_port)], cwd=FRONTEND_DIR)
+def find_tool(candidates: List[str]) -> Optional[str]:
+    for name in candidates:
+        resolved = shutil.which(name)
+        if resolved:
+            return resolved
+    return None
+
+
+def start_frontend(frontend_port: int, npm_cmd: str) -> subprocess.Popen:
+    print(f"[launcher] Starting frontend dev server on port {frontend_port} using {npm_cmd} ...")
+    return subprocess.Popen([npm_cmd, "run", "dev", "--", "--host", "--port", str(frontend_port)], cwd=FRONTEND_DIR)
 
 
 def parse_args() -> argparse.Namespace:
@@ -74,6 +83,12 @@ def main() -> int:
         f"dev={args.dev} env={args.environment} api={args.api_port} ui={args.frontend_port}"
     )
 
+    npm_cmd = find_tool(["npm", "npm.cmd", "npm.exe"])
+    if npm_cmd:
+        print(f"[launcher] npm detected at {npm_cmd}")
+    else:
+        print("[launcher] npm not found in PATH; UI dev server will be skipped. Install Node.js/npm to enable.")
+
     if not args.skip_install:
         install_deps()
     else:
@@ -88,8 +103,11 @@ def main() -> int:
     try:
         if args.dev:
             procs.append(start_api(args.api_port))
-            procs.append(start_frontend(args.frontend_port))
-            print("[launcher] Dev servers launched. Press Ctrl+C to stop.")
+            if npm_cmd:
+                procs.append(start_frontend(args.frontend_port, npm_cmd))
+            else:
+                print("[launcher] UI not started; npm missing.")
+            print("[launcher] Dev servers launched (where available). Press Ctrl+C to stop.")
             for proc in procs:
                 proc.wait()
     except KeyboardInterrupt:
